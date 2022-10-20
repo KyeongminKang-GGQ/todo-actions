@@ -9,9 +9,9 @@ LABEL "repository"="http://github.com/dtinth/todo-actions"
 LABEL "homepage"="http://github.com/dtinth/todo-actions"
 LABEL "maintainer"="dtinth <dtinth@spacet.me>"
 
-ENV GIT_COMMITTER_NAME=TODO
-ENV GIT_AUTHOR_NAME=TODO
-ENV EMAIL=todo-actions[bot]@ggq.gg
+ENV GIT_COMMITTER_NAME="Github Actions"
+ENV GIT_AUTHOR_NAME="Github Actions"
+ENV EMAIL="actions@github.com"
 
 RUN mkdir -p /app
 ADD entrypoint.sh package.json tsconfig.json yarn.lock /app/
