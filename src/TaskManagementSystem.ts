@@ -3,7 +3,6 @@ import { invariant, logger } from 'tkt'
 import * as CodeRepository from './CodeRepository'
 
 const log = logger('TaskManagementSystem')
-const stripTime = (date: Date): Date => new Date(date.toDateString());
 
 type TaskInformation = {
   title: string
@@ -19,6 +18,12 @@ export async function createTask(
         invariant(false, 'Required GITHUB_TOKEN variable.')}`,
     },
   })
+
+  const milestoneId = await getMilestoneId(
+    process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
+  );
+  log.info(`Milestone with the name "${process.env.MILESTONE}" is "${milestoneId}"`);
+
   const result = await graphql(
     `
       mutation CreateIssue($input: CreateIssueInput!) {
@@ -34,10 +39,12 @@ export async function createTask(
         repositoryId: CodeRepository.repoContext.repositoryNodeId,
         title: information.title,
         body: information.body,
+        milestoneId: milestoneId
       },
     },
   )
   log.debug('Create issue result:', result)
+
   return result.createIssue.issue.number
     ? `#${result.createIssue.issue.number}`
     : invariant(
@@ -61,9 +68,9 @@ export async function completeTask(taskReference: string): Promise<void> {
   log.debug('Issue close result:', result.data)
 }
 
-const getMilestoneNumber = async (
+const getMilestoneId = async (
   milestoneName: string,
-): Promise<number> => {
+): Promise<string> => {
   const Octokit = (await import('@octokit/rest')).default
   const octokit = new Octokit({
     auth: `token ${process.env.GITHUB_TOKEN ||
@@ -77,9 +84,7 @@ const getMilestoneNumber = async (
   log.debug(`listMilestones response:\n${JSON.stringify(response)}`);
   log.info(`Milestones available:\n${JSON.stringify(response.data.map((milestone: { title: any; }) => milestone.title))}`);
 
-  const today = stripTime(new Date());
   const milestone = response.data
-    .filter((m: { due_on: string; }) => !m.due_on || stripTime(new Date(m.due_on)) >= today)
     .find((m: { title: string; }) => m.title === milestoneName);
 
   // Check if milestone exists
@@ -90,15 +95,18 @@ const getMilestoneNumber = async (
       repo: CodeRepository.repoContext.repositoryName,
       title: milestoneName
     })
-    return response.data.id;
+    if (response === undefined) {
+      throw new Error(`Create Milestone with the name "${milestoneName}" failed`);
+    }
+    return response.data.node_id;
   }
 
-  const milestoneNumber = milestone.number;
-  if (milestoneNumber === undefined) {
-    throw new Error(`Milestone with the name "${milestoneName}" number was not found.`);
+  const milestoneId = milestone.node_id;
+  if (milestoneId === undefined) {
+    throw new Error(`Milestone with the name "${milestoneName}" node_id was not found.`);
   }
 
-  return milestoneNumber;
+  return milestoneId;
 };
 
 export async function updateTask(
@@ -110,18 +118,12 @@ export async function updateTask(
     auth: `token ${process.env.GITHUB_TOKEN ||
       invariant(false, 'Required GITHUB_TOKEN variable.')}`,
   })
-  const milestoneNumber = await getMilestoneNumber(
-    process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
-  );
-  log.info(`Milestone with the name "${process.env.MILESTONE}" is "${milestoneNumber}"`);
-
   const result = await octokit.issues.update({
     owner: CodeRepository.repoContext.repositoryOwner,
     repo: CodeRepository.repoContext.repositoryName,
     issue_number: +taskReference.substr(1),
     title: information.title,
     body: information.body,
-    milestone: milestoneNumber
   })
   log.debug('Issue update result:', result.data)
 }
