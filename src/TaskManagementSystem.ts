@@ -3,6 +3,7 @@ import { invariant, logger } from 'tkt'
 import * as CodeRepository from './CodeRepository'
 
 const log = logger('TaskManagementSystem')
+const stripTime = (date: Date): Date => new Date(date.toDateString());
 
 type TaskInformation = {
   title: string
@@ -60,6 +61,36 @@ export async function completeTask(taskReference: string): Promise<void> {
   log.debug('Issue close result:', result.data)
 }
 
+const getMilestoneNumber = async (
+  milestoneName: string,
+): Promise<number> => {
+  const Octokit = (await import('@octokit/rest')).default
+  const octokit = new Octokit({
+    auth: `token ${process.env.GITHUB_TOKEN ||
+      invariant(false, 'Required GITHUB_TOKEN variable.')}`,
+  })
+  const response = await octokit.issues.listMilestones({
+    owner: CodeRepository.repoContext.repositoryOwner,
+    repo: CodeRepository.repoContext.repositoryName,
+  })
+
+  log.debug(`listMilestones response:\n${JSON.stringify(response)}`);
+  log.info(`Milestones available:\n${JSON.stringify(response.data.map((milestone: { title: any; }) => milestone.title))}`);
+
+  const today = stripTime(new Date());
+  const milestone = response.data
+    .filter((m: { due_on: string | number | Date; }) => !m.due_on || stripTime(new Date(m.due_on)) >= today)
+    .find((m: { title: string; }) => m.title === milestoneName);
+
+  // Check if milestone exists
+  const milestoneNumber = milestone.number;
+  if (milestoneNumber === undefined) {
+    throw new Error(`Milestone with the name "${milestoneName}" was not found.`);
+  }
+
+  return milestoneNumber;
+};
+
 export async function updateTask(
   taskReference: string,
   information: TaskInformation,
@@ -69,13 +100,16 @@ export async function updateTask(
     auth: `token ${process.env.GITHUB_TOKEN ||
       invariant(false, 'Required GITHUB_TOKEN variable.')}`,
   })
+  const milestoneNumber = await getMilestoneNumber(
+    process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
+  );
   const result = await octokit.issues.update({
     owner: CodeRepository.repoContext.repositoryOwner,
     repo: CodeRepository.repoContext.repositoryName,
     issue_number: +taskReference.substr(1),
     title: information.title,
     body: information.body,
-    milestone: process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
+    milestone: milestoneNumber
   })
   log.debug('Issue update result:', result.data)
 }
