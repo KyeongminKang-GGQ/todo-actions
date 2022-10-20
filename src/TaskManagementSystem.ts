@@ -83,6 +83,10 @@ const getMilestoneNumber = async (
     .find((m: { title: string; }) => m.title === milestoneName);
 
   // Check if milestone exists
+  if (milestone === undefined) {
+    throw new Error(`Milestone with the name "${milestoneName}" was not found.`);
+  }
+  
   const milestoneNumber = milestone.number;
   if (milestoneNumber === undefined) {
     throw new Error(`Milestone with the name "${milestoneName}" was not found.`);
