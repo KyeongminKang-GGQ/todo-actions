@@ -26,18 +26,15 @@ export function generateTaskInformationFromTodo(todo: ITodo): TaskInformation {
     '',
     '---',
     `_` +
-      `This issue has been automatically created by [todo-actions](https://github.com/apps/todo-actions) based on a TODO comment found in ${link}. ` +
-      `It will automatically be closed when the TODO comment is removed from the default branch (${defaultBranch}).` +
-      `Initial milestone: (${process.env.MILESTONE})` +
+      `This issue has been automatically created by todo-actions based on a TODO comment found in ${link}. ` +
+      `It will automatically be closed when the TODO comment is removed.` +
+      `\nInitial milestone: (${process.env.MILESTONE})` +
       `_`,
   ].join('\n')
 
   return {
     state: {
-      hash: createHash('md5')
-        .update(title)
-        .update(body)
-        .digest('hex'),
+      hash: createHash('md5').update(title).update(body).digest('hex'),
     },
     title,
     body,
