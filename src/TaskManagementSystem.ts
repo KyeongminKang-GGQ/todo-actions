@@ -75,6 +75,7 @@ export async function updateTask(
     issue_number: +taskReference.substr(1),
     title: information.title,
     body: information.body,
+    milestone: process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
   })
   log.debug('Issue update result:', result.data)
 }
