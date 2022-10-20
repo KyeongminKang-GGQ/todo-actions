@@ -69,7 +69,7 @@ const getMilestoneNumber = async (
     auth: `token ${process.env.GITHUB_TOKEN ||
       invariant(false, 'Required GITHUB_TOKEN variable.')}`,
   })
-  const response = await octokit.issues.listMilestones({
+  const response = await octokit.issues.listMilestonesForRepo({
     owner: CodeRepository.repoContext.repositoryOwner,
     repo: CodeRepository.repoContext.repositoryName,
   })
@@ -79,7 +79,7 @@ const getMilestoneNumber = async (
 
   const today = stripTime(new Date());
   const milestone = response.data
-    .filter((m: { due_on: string | number | Date; }) => !m.due_on || stripTime(new Date(m.due_on)) >= today)
+    .filter((m: { due_on: string; }) => !m.due_on || stripTime(new Date(m.due_on)) >= today)
     .find((m: { title: string; }) => m.title === milestoneName);
 
   // Check if milestone exists
