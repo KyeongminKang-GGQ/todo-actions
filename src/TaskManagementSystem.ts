@@ -84,12 +84,18 @@ const getMilestoneNumber = async (
 
   // Check if milestone exists
   if (milestone === undefined) {
-    throw new Error(`Milestone with the name "${milestoneName}" was not found.`);
+    // throw new Error(`Milestone with the name "${milestoneName}" was not found.`);
+    const response = await octokit.issues.createMilestone({
+      owner: CodeRepository.repoContext.repositoryOwner,
+      repo: CodeRepository.repoContext.repositoryName,
+      title: milestoneName
+    })
+    return response.data.id;
   }
 
   const milestoneNumber = milestone.number;
   if (milestoneNumber === undefined) {
-    throw new Error(`Milestone with the name "${milestoneName}" was not found.`);
+    throw new Error(`Milestone with the name "${milestoneName}" number was not found.`);
   }
 
   return milestoneNumber;
@@ -107,14 +113,15 @@ export async function updateTask(
   const milestoneNumber = await getMilestoneNumber(
     process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
   );
-  throw new Error(`Milestone with the name "${process.env.MILESTONE}" is ${milestoneNumber}`);
-  // const result = await octokit.issues.update({
-  //   owner: CodeRepository.repoContext.repositoryOwner,
-  //   repo: CodeRepository.repoContext.repositoryName,
-  //   issue_number: +taskReference.substr(1),
-  //   title: information.title,
-  //   body: information.body,
-  //   milestone: milestoneNumber
-  // })
-  // log.debug('Issue update result:', result.data)
+  log.info(`Milestone with the name "${process.env.MILESTONE}" is "${milestoneNumber}"`);
+
+  const result = await octokit.issues.update({
+    owner: CodeRepository.repoContext.repositoryOwner,
+    repo: CodeRepository.repoContext.repositoryName,
+    issue_number: +taskReference.substr(1),
+    title: information.title,
+    body: information.body,
+    milestone: milestoneNumber
+  })
+  log.debug('Issue update result:', result.data)
 }
