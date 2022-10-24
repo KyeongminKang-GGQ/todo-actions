@@ -14,15 +14,21 @@ export async function createTask(
 ): Promise<string> {
   const graphql = require('@octokit/graphql').defaults({
     headers: {
-      authorization: `token ${process.env.GITHUB_TOKEN ||
-        invariant(false, 'Required GITHUB_TOKEN variable.')}`,
+      authorization: `token ${
+        process.env.GITHUB_TOKEN ||
+        invariant(false, 'Required GITHUB_TOKEN variable.')
+      }`,
     },
   })
 
-  const milestoneId = await getMilestoneId(
-    process.env.MILESTONE || invariant(false, 'Required MILESTONE variable.')
-  );
-  log.info(`Milestone with the name "${process.env.MILESTONE}" is "${milestoneId}"`);
+  let milestoneId: string | undefined
+
+  if (process.env.MILESTONE) {
+    milestoneId = await getMilestoneId(process.env.MILESTONE)
+    log.info(
+      `Milestone with the name "${process.env.MILESTONE}" is "${milestoneId}"`,
+    )
+  }
 
   const result = await graphql(
     `
@@ -39,7 +45,7 @@ export async function createTask(
         repositoryId: CodeRepository.repoContext.repositoryNodeId,
         title: information.title,
         body: information.body,
-        milestoneId: milestoneId
+        milestoneId: milestoneId,
       },
     },
   )
@@ -56,8 +62,10 @@ export async function createTask(
 export async function completeTask(taskReference: string): Promise<void> {
   const Octokit = (await import('@octokit/rest')).default
   const octokit = new Octokit({
-    auth: `token ${process.env.GITHUB_TOKEN ||
-      invariant(false, 'Required GITHUB_TOKEN variable.')}`,
+    auth: `token ${
+      process.env.GITHUB_TOKEN ||
+      invariant(false, 'Required GITHUB_TOKEN variable.')
+    }`,
   })
   const result = await octokit.issues.update({
     owner: CodeRepository.repoContext.repositoryOwner,
@@ -68,24 +76,29 @@ export async function completeTask(taskReference: string): Promise<void> {
   log.debug('Issue close result:', result.data)
 }
 
-const getMilestoneId = async (
-  milestoneName: string,
-): Promise<string> => {
+const getMilestoneId = async (milestoneName: string): Promise<string> => {
   const Octokit = (await import('@octokit/rest')).default
   const octokit = new Octokit({
-    auth: `token ${process.env.GITHUB_TOKEN ||
-      invariant(false, 'Required GITHUB_TOKEN variable.')}`,
+    auth: `token ${
+      process.env.GITHUB_TOKEN ||
+      invariant(false, 'Required GITHUB_TOKEN variable.')
+    }`,
   })
   const response = await octokit.issues.listMilestonesForRepo({
     owner: CodeRepository.repoContext.repositoryOwner,
     repo: CodeRepository.repoContext.repositoryName,
   })
 
-  log.debug(`listMilestones response:\n${JSON.stringify(response)}`);
-  log.info(`Milestones available:\n${JSON.stringify(response.data.map((milestone: { title: any; }) => milestone.title))}`);
+  log.debug(`listMilestones response:\n${JSON.stringify(response)}`)
+  log.info(
+    `Milestones available:\n${JSON.stringify(
+      response.data.map((milestone: { title: any }) => milestone.title),
+    )}`,
+  )
 
-  const milestone = response.data
-    .find((m: { title: string; }) => m.title === milestoneName);
+  const milestone = response.data.find(
+    (m: { title: string }) => m.title === milestoneName,
+  )
 
   // Check if milestone exists
   if (milestone === undefined) {
@@ -93,21 +106,25 @@ const getMilestoneId = async (
     const response = await octokit.issues.createMilestone({
       owner: CodeRepository.repoContext.repositoryOwner,
       repo: CodeRepository.repoContext.repositoryName,
-      title: milestoneName
+      title: milestoneName,
     })
     if (response === undefined) {
-      throw new Error(`Create Milestone with the name "${milestoneName}" failed`);
+      throw new Error(
+        `Create Milestone with the name "${milestoneName}" failed`,
+      )
     }
-    return response.data.node_id;
+    return response.data.node_id
   }
 
-  const milestoneId = milestone.node_id;
+  const milestoneId = milestone.node_id
   if (milestoneId === undefined) {
-    throw new Error(`Milestone with the name "${milestoneName}" node_id was not found.`);
+    throw new Error(
+      `Milestone with the name "${milestoneName}" node_id was not found.`,
+    )
   }
 
-  return milestoneId;
-};
+  return milestoneId
+}
 
 export async function updateTask(
   taskReference: string,
@@ -115,8 +132,10 @@ export async function updateTask(
 ): Promise<void> {
   const Octokit = (await import('@octokit/rest')).default
   const octokit = new Octokit({
-    auth: `token ${process.env.GITHUB_TOKEN ||
-      invariant(false, 'Required GITHUB_TOKEN variable.')}`,
+    auth: `token ${
+      process.env.GITHUB_TOKEN ||
+      invariant(false, 'Required GITHUB_TOKEN variable.')
+    }`,
   })
   const result = await octokit.issues.update({
     owner: CodeRepository.repoContext.repositoryOwner,
