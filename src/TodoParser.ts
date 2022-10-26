@@ -11,7 +11,15 @@ export function parseTodos(file: IFile): ITodo[] {
     const match = line.match(/^(\W+\s)(TODO|FIXME)(?: \[([^\]\s]+)\])?:(.*)/)
     if (match) {
       if (match) {
-        const todo = new Todo(file, lineIndex, match[1], match[2], match[3])
+        const todo = new Todo(
+          file,
+          lineIndex,
+          match[1],
+          match[3],
+          match[4],
+          match[2],
+        )
+        log.debug('tag: %s, title: %s found', todo.tag, todo.title)
         currentTodo = todo
         out.push(todo)
       }
@@ -37,6 +45,7 @@ class Todo implements ITodo {
   suffix: string
   body: string
   title: string
+  tag: string
 
   private currentReference: string | null
 
@@ -46,6 +55,7 @@ class Todo implements ITodo {
     prefix: string,
     reference: string | null,
     suffix: string,
+    tag: string,
   ) {
     this.line = line
     this.prefix = prefix
@@ -53,6 +63,7 @@ class Todo implements ITodo {
     this.suffix = suffix
     this.title = suffix.trim()
     this.body = ''
+    this.tag = tag
   }
 
   get reference(): string | null {
@@ -62,7 +73,7 @@ class Todo implements ITodo {
     this.currentReference = newRef
     this.file.contents.changeLine(
       this.line,
-      `${this.prefix}TODO${newRef ? ` [${newRef}]` : ''}:${this.suffix}`,
+      `${this.prefix}${this.tag}${newRef ? ` [${newRef}]` : ''}:${this.suffix}`,
     )
   }
 
