@@ -28,7 +28,6 @@ export function generateTaskInformationFromTodo(todo: ITodo): TaskInformation {
     `_` +
       `This issue has been automatically created by todo-actions based on a TODO comment found in ${link}. ` +
       `It will automatically be closed when the TODO comment is removed.` +
-      `\nInitial milestone: (${process.env.MILESTONE})` +
       `_`,
   ].join('\n')
 
