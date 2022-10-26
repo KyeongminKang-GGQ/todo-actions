@@ -8,30 +8,10 @@ export function parseTodos(file: IFile): ITodo[] {
 
   let currentTodo: Todo | undefined
   for (const [lineIndex, line] of file.contents.lines.entries()) {
-    const todoMatch = line.match(/^(\W+\s)TODO(?: \[([^\]\s]+)\])?:(.*)/)
-    const fixmeMatch = line.match(/^(\W+\s)FIXME(?: \[([^\]\s]+)\])?:(.*)/)
-    if (todoMatch || fixmeMatch) {
-      let todo: Todo | undefined
-      if (todoMatch) {
-        todo = new Todo(
-          file,
-          lineIndex,
-          todoMatch[1],
-          todoMatch[2],
-          todoMatch[3],
-        )
-        log.info('todoMatch found: %s, %s', todo.suffix, todo.title)
-      } else if (fixmeMatch) {
-        todo = new Todo(
-          file,
-          lineIndex,
-          fixmeMatch[1],
-          fixmeMatch[2],
-          fixmeMatch[3],
-        )
-        log.info('fixmeMatch found: %s, %s', todo.suffix, todo.title)
-      }
-      if (todo) {
+    const match = line.match(/^(\W+\s)(TODO|FIXME)(?: \[([^\]\s]+)\])?:(.*)/)
+    if (match) {
+      if (match) {
+        const todo = new Todo(file, lineIndex, match[1], match[2], match[3])
         currentTodo = todo
         out.push(todo)
       }
